@@ -61,7 +61,7 @@ class DataEngine:
         numeric = list(REQUIRED[1:])
         if not df[numeric].notna().all().all():
             raise ValueError("NaN values detected")
-        if not df[numeric].applymap(pd.api.types.is_number).all().all():
+        if not df[numeric].map(pd.api.types.is_number).all().all():
             raise ValueError("Non-numeric market values detected")
         if not (df["high"] >= df[["open", "close", "low"]].max(axis=1)).all():
             raise ValueError("Invalid high prices")
