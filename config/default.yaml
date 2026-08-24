@@ -3,18 +3,24 @@ capital: 10000
 costs:
   fee_rate: 0.0004
   slippage_bps: 2.0
-  funding_rate: 0.0
+  funding_rate: 0.0001
   funding_interval_bars: 8
 risk:
-  risk_per_trade: 0.01
-  max_exposure: 1.0
+  default_risk_per_trade: 0.01
+  default_max_exposure: 1.0
 search:
   population: 1000
   fast_min_return: -0.25
+  fast_max_drawdown: 0.80
   generations: 10
   elite: 20
+  mutation_rate: 0.80
 validation:
   train_ratio: 0.60
   validation_ratio: 0.20
   oos_ratio: 0.20
+  walk_forward_folds: 5
+  monte_carlo_paths: 2000
   robustness_top_n: 25
+  minimum_train_trades: 10
+  minimum_validation_trades: 5
