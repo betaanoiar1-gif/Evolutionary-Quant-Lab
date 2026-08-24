@@ -46,9 +46,7 @@ class RiskModel:
         distance = abs(entry - stop)
         if distance == 0:
             return 0.0
-        risk_size = equity * self.risk_per_trade / distance
-        exposure_size = equity * self.max_exposure / entry
-        return min(risk_size, exposure_size)
+        return min(equity * self.risk_per_trade / distance, equity * self.max_exposure / entry)
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,7 +74,7 @@ class PerformanceReport:
 class BacktestEngine:
     def __init__(self, costs: CostModel | None = None, risk: RiskModel | None = None) -> None:
         self.costs = costs or CostModel()
-        self.risk = risk or RiskModel()
+        self.risk = risk
 
     @staticmethod
     def _signals(row: pd.Series, dna) -> tuple[bool, bool]:
@@ -94,6 +92,7 @@ class BacktestEngine:
     def run(self, df: pd.DataFrame, dna, initial: float = 10_000) -> PerformanceReport:
         if initial <= 0:
             raise ValueError("initial capital must be positive")
+        risk = self.risk or RiskModel(dna.risk_per_trade, dna.max_exposure)
         x = build_features(df, dna).dropna().reset_index(drop=True)
         if len(x) < 2:
             return PerformanceReport(initial, initial, 0.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, dna.complexity)
@@ -133,7 +132,7 @@ class BacktestEngine:
                 exposure_bars += 1
                 bars_in_trade += 1
                 if i % self.costs.funding_interval_bars == 0:
-                    charge = abs(pos * size * price) * self.costs.funding_rate
+                    charge = abs(size * price) * self.costs.funding_rate
                     equity -= charge
                     funding += charge
                 hit_stop = bool(row.low <= stop) if pos == 1 else bool(row.high >= stop)
@@ -156,7 +155,7 @@ class BacktestEngine:
                         entry_price = self.costs.execution_price(price, direction)
                         stop_price = entry_price - direction * dna.stop_atr * float(row.atr)
                         target_price = entry_price + direction * dna.take_atr * float(row.atr)
-                        position_size = self.risk.size(equity, entry_price, stop_price)
+                        position_size = risk.size(equity, entry_price, stop_price)
                         if position_size > 0:
                             entry, stop, target, size, pos = entry_price, stop_price, target_price, position_size, direction
                             fee = self.costs.trade_cost(size * entry)
