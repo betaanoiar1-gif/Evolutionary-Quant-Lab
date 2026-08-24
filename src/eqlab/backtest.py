@@ -27,6 +27,9 @@ class CostModel:
             raise ValueError("price must be positive and side must be +/-1")
         return price * (1 + side * self.slippage_bps / 10000)
 
+    def slippage_cost(self, reference_price: float, executed_price: float, quantity: float) -> float:
+        return abs(executed_price - reference_price) * abs(quantity)
+
     def trade_cost(self, notional: float) -> float:
         return abs(notional) * self.fee_rate
 
@@ -118,7 +121,7 @@ class BacktestEngine:
             starting_equity = equity
             equity += net
             fees += fee
-            slippage += abs(exit_price - raw_price) * size
+            slippage += self.costs.slippage_cost(raw_price, exit_price, size)
             turnover += abs(size * exit_price)
             gross_win += max(net, 0.0)
             gross_loss += max(-net, 0.0)
@@ -161,6 +164,7 @@ class BacktestEngine:
                             fee = self.costs.trade_cost(size * entry)
                             equity -= fee
                             fees += fee
+                            slippage += self.costs.slippage_cost(price, entry, size)
                             turnover += abs(size * entry)
 
             curve.append(equity)
