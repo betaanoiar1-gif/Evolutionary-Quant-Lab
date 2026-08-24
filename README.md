@@ -12,6 +12,14 @@ A modular quantitative research laboratory for generating, backtesting, evolving
 - Robustness over raw return.
 - Reproducible experiments.
 
+## Implemented
+
+Environment, validated OHLCV data ingestion, temporal splitting, Strategy DNA, technical features, realistic cost/risk models, deterministic backtesting, evolutionary search, robustness validation, isolated OOS evaluation, ranking, archive, and regime/meta-strategy primitives.
+
+## Verification
+
+GitHub Actions runs pytest and Python compilation checks on every push and pull request to `main`.
+
 ## Status
 
-Foundation initialization.
+Core research laboratory implementation in progress.
