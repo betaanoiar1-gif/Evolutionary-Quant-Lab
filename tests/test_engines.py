@@ -29,6 +29,13 @@ def test_funding_changes_equity_when_positions_exist():
     assert b.funding != 0 or a.trades == 0
 
 
+def test_higher_slippage_increases_recorded_execution_cost():
+    df = market(); d = StrategyDNA(10, 50)
+    low = BacktestEngine(CostModel(slippage_bps=1)).run(df, d)
+    high = BacktestEngine(CostModel(slippage_bps=10)).run(df, d)
+    assert high.slippage >= low.slippage
+
+
 def test_regime_and_report_writer(tmp_path):
     df = market(); d = StrategyDNA(10, 50); report = BacktestEngine().run(df, d)
     regime = RegimeDetector().detect(df)
