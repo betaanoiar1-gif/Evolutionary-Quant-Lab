@@ -10,8 +10,10 @@ class CostModel:
     fee_rate: float = 0.0004
     slippage_bps: float = 2.0
     funding_rate: float = 0.0
+    funding_interval_bars: int = 8
     def __post_init__(self):
         if min(self.fee_rate, self.slippage_bps, self.funding_rate) < 0: raise ValueError("Costs cannot be negative")
+        if self.funding_interval_bars < 1: raise ValueError("funding_interval_bars must be positive")
     def execution_price(self, price: float, side: int) -> float: return price * (1 + side * self.slippage_bps / 10000)
     def trade_cost(self, notional: float) -> float: return abs(notional) * self.fee_rate
 
@@ -50,8 +52,8 @@ class BacktestEngine:
         for i,row in x.iterrows():
             price=float(row.close); a=float(row.atr)
             if pos:
-                funding_charge=pos*size*price*self.costs.funding_rate
-                equity-=funding_charge; funding+=funding_charge
+                if i > 0 and i % self.costs.funding_interval_bars == 0:
+                    funding_charge=pos*size*price*self.costs.funding_rate; equity-=funding_charge; funding+=funding_charge
                 hit_stop=row.low<=stop if pos==1 else row.high>=stop; hit_target=row.high>=target if pos==1 else row.low<=target
                 if hit_stop or hit_target:
                     exit_raw=stop if hit_stop else target; side=-pos; exit_price=self.costs.execution_price(exit_raw,side); pnl=pos*size*(exit_price-entry); c=self.costs.trade_cost(size*exit_price); fees+=c; slip+=abs(exit_price-exit_raw)*size; net=pnl-c; equity+=net; wins.append(net); gross_win+=max(net,0); gross_loss+=max(-net,0); pos=0; size=0
