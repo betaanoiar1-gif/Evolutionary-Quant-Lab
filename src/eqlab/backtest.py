@@ -70,6 +70,7 @@ class PerformanceReport:
     exposure: float = 0.0
     turnover: float = 0.0
     expectancy: float = 0.0
+    trade_returns: tuple[float, ...] = ()
 
 
 class BacktestEngine:
@@ -115,13 +116,14 @@ class BacktestEngine:
             pnl = direction * size * (exit_price - entry)
             fee = self.costs.trade_cost(size * exit_price)
             net = pnl - fee
+            starting_equity = equity
             equity += net
             fees += fee
             slippage += abs(exit_price - raw_price) * size
             turnover += abs(size * exit_price)
             gross_win += max(net, 0.0)
             gross_loss += max(-net, 0.0)
-            trade_returns.append(net / max(equity - net, 1e-12))
+            trade_returns.append(net / max(starting_equity, 1e-12))
             pos = 0
             size = 0.0
 
@@ -181,5 +183,5 @@ class BacktestEngine:
             initial, equity, equity / initial - 1, max_dd, sharpe, sortino, trades,
             sum(v > 0 for v in trade_returns) / trades if trades else 0.0,
             profit_factor, equity - initial, fees, slippage, dna.complexity, funding,
-            exposure_bars / max(len(x), 1), turnover, expectancy,
+            exposure_bars / max(len(x), 1), turnover, expectancy, tuple(trade_returns),
         )
