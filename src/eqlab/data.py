@@ -59,15 +59,15 @@ class DataEngine:
         if df["timestamp"].duplicated().any():
             raise ValueError("Duplicate timestamps detected")
         numeric = list(REQUIRED[1:])
-        if not df[numeric].map(lambda s: s.notna().all()).all():
+        if not df[numeric].notna().all().all():
             raise ValueError("NaN values detected")
-        if not df[numeric].map(lambda s: s.map(pd.api.types.is_number).all()).all():
+        if not df[numeric].applymap(pd.api.types.is_number).all().all():
             raise ValueError("Non-numeric market values detected")
         if not (df["high"] >= df[["open", "close", "low"]].max(axis=1)).all():
             raise ValueError("Invalid high prices")
         if not (df["low"] <= df[["open", "close", "high"]].min(axis=1)).all():
             raise ValueError("Invalid low prices")
-        if (df[numeric] <= 0)[["open", "high", "low", "close"]].any().any():
+        if (df[["open", "high", "low", "close"]] <= 0).any().any():
             raise ValueError("Prices must be positive")
         if (df["volume"] < 0).any():
             raise ValueError("Negative volume detected")
