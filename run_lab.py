@@ -10,14 +10,10 @@ def synthetic_data(n=3000, seed=42):
     rng=np.random.default_rng(seed)
     ret=rng.normal(0.0001,0.01,n)
     close=100*np.cumprod(1+ret)
-    return pd.DataFrame({
-        "timestamp":pd.date_range("2020-01-01",periods=n,freq="h",tz="UTC"),
-        "open":close*(1+rng.normal(0,.001,n)),
-        "high":close*(1+np.abs(rng.normal(0,.004,n))),
-        "low":close*(1-np.abs(rng.normal(0,.004,n))),
-        "close":close,
-        "volume":rng.uniform(100,1000,n),
-    })
+    open_=close*(1+rng.normal(0,.001,n))
+    high=np.maximum(open_,close)*(1+np.abs(rng.normal(0,.004,n)))
+    low=np.minimum(open_,close)*(1-np.abs(rng.normal(0,.004,n)))
+    return pd.DataFrame({"timestamp":pd.date_range("2020-01-01",periods=n,freq="h",tz="UTC"),"open":open_,"high":high,"low":low,"close":close,"volume":rng.uniform(100,1000,n)})
 
 
 def main():
