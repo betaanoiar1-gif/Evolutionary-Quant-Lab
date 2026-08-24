@@ -43,6 +43,7 @@ class PerformanceReport:
     slippage: float
     complexity: float
     funding: float = 0.0
+    trade_returns: tuple[float, ...] = ()
 
 class BacktestEngine:
     def __init__(self, costs=None, risk=None): self.costs=costs or CostModel(); self.risk=risk or RiskModel()
@@ -65,4 +66,4 @@ class BacktestEngine:
         if pos:
             raw=float(x.iloc[-1].close); exit_price=self.costs.execution_price(raw,-pos); pnl=pos*size*(exit_price-entry); c=self.costs.trade_cost(size*exit_price); net=pnl-c; equity+=net; fees+=c; slip+=abs(exit_price-raw)*size; wins.append(net); gross_win+=max(net,0); gross_loss+=max(-net,0)
         returns=pd.Series(curve).pct_change().dropna(); sharpe=float(np.sqrt(252)*returns.mean()/returns.std()) if returns.std()>0 else 0.; neg=returns[returns<0]; sortino=float(np.sqrt(252)*returns.mean()/neg.std()) if len(neg)>1 and neg.std()>0 else 0.; pf=gross_win/gross_loss if gross_loss else (math.inf if gross_win else 0.)
-        return PerformanceReport(initial,equity,equity/initial-1,maxdd,sharpe,sortino,len(wins),sum(v>0 for v in wins)/len(wins) if wins else 0,pf,equity-initial,fees,slip,dna.complexity,funding)
+        return PerformanceReport(initial,equity,equity/initial-1,maxdd,sharpe,sortino,len(wins),sum(v>0 for v in wins)/len(wins) if wins else 0,pf,equity-initial,fees,slip,dna.complexity,funding,tuple(wins))
