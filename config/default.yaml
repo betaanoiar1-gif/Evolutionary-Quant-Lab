@@ -1,0 +1,19 @@
+seed: 42
+capital: 10000
+costs:
+  fee_rate: 0.0004
+  slippage_bps: 2.0
+  funding_rate: 0.0
+risk:
+  risk_per_trade: 0.01
+  max_exposure: 1.0
+search:
+  population: 1000
+  fast_min_return: -0.25
+  generations: 10
+  elite: 20
+validation:
+  train_ratio: 0.60
+  validation_ratio: 0.20
+  oos_ratio: 0.20
+  robustness_top_n: 25
