@@ -8,7 +8,7 @@ from .data import DataEngine
 from .evolution import Candidate, SearchEngine, StrategyGenerator, score
 from .fast import FastBacktestEngine
 from .ranking import RankedStrategy, RankingEngine
-from .validation import OOSGate, RobustnessEngine, RobustnessReport
+from .validation import OOSGate, RobustnessEngine
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,7 +42,10 @@ class Laboratory:
         return survivors
 
     def full_rank(self, train, population) -> list[Candidate]:
-        candidates = [Candidate(dna, self.bt.run(train, dna), score(self.bt.run(train, dna))) for dna in population]
+        candidates = []
+        for dna in population:
+            report = self.bt.run(train, dna)
+            candidates.append(Candidate(dna, report, score(report)))
         return sorted(candidates, key=lambda item: item.score, reverse=True)
 
     def evolve(self, train, population, generations: int = 5, elite: int = 10):
