@@ -58,11 +58,11 @@ class EvolutionEngine:
             values[key] = min(70.0, max(30.0, values[key] + self.rng.uniform(-5, 5)))
         elif key in ("stop_atr", "take_atr"):
             values[key] = max(.5, values[key] + self.rng.uniform(-.5, .5))
-        elif key in ("adx_min",):
+        elif key == "adx_min":
             values[key] = min(50.0, max(5.0, values[key] + self.rng.uniform(-5, 5)))
-        elif key in ("volume_multiplier",):
+        elif key == "volume_multiplier":
             values[key] = min(3.0, max(.5, values[key] + self.rng.uniform(-.2, .2)))
-        elif key in ("risk_per_trade",):
+        elif key == "risk_per_trade":
             values[key] = min(.05, max(.0025, values[key] * self.rng.uniform(.7, 1.3)))
         elif key == "max_exposure":
             values[key] = min(1.0, max(.1, values[key] + self.rng.uniform(-.1, .1)))
@@ -130,7 +130,15 @@ class SearchEngine:
             raise ValueError("generations and elite must be positive")
         if not 0 <= mutation_rate <= 1:
             raise ValueError("mutation_rate must be in [0,1]")
-        pop = list(dict.fromkeys(population))
+        pop: list[StrategyDNA] = []
+        seen: set[str] = set()
+        for dna in population:
+            fp = dna.fingerprint()
+            if fp not in seen:
+                seen.add(fp)
+                pop.append(dna)
+        if not pop:
+            raise ValueError("population must contain valid strategies")
         archive: dict[str, Candidate] = {}
         target = len(pop)
         for _ in range(generations):
@@ -140,13 +148,27 @@ class SearchEngine:
             keep = min(elite, len(ranked))
             parents = [c.dna for c in ranked[:keep]]
             next_pop = parents[:]
-            while len(next_pop) < target:
+            next_seen = {d.fingerprint() for d in next_pop}
+            attempts = 0
+            max_attempts = max(100, target * 100)
+            while len(next_pop) < target and attempts < max_attempts:
+                attempts += 1
                 a = self.ev.rng.choice(parents)
                 b = self.ev.rng.choice(parents)
                 child = self.ev.crossover(a, b)
                 if self.ev.rng.random() < mutation_rate:
                     child = self.ev.mutate(child)
-                if child.fingerprint() not in {d.fingerprint() for d in next_pop}:
+                fp = child.fingerprint()
+                if fp not in next_seen:
+                    next_seen.add(fp)
                     next_pop.append(child)
+            if len(next_pop) < target:
+                for candidate in ranked:
+                    if len(next_pop) >= target:
+                        break
+                    fp = candidate.dna.fingerprint()
+                    if fp not in next_seen:
+                        next_seen.add(fp)
+                        next_pop.append(candidate.dna)
             pop = next_pop
         return sorted(archive.values(), key=lambda c: c.score, reverse=True)

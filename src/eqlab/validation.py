@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -63,9 +63,9 @@ class RobustnessEngine:
             fast = max(2, dna.fast + delta)
             slow = max(fast + 1, dna.slow + delta)
             try:
-                variant = replace(dna, fast=fast, slow=slow)
+                variant = StrategyDNA.from_dict({**dna.to_dict(), "fast": fast, "slow": slow})
                 variants.append(self.bt.run(df, variant).total_return)
-            except ValueError:
+            except (TypeError, ValueError):
                 continue
         if not variants:
             return 0.0
