@@ -59,7 +59,10 @@ class Laboratory:
     def select_development(self, train, validation, population) -> SelectionReport:
         """Select candidates using Train/Validation only. OOS is not accepted here."""
         report = self.selection.evaluate(train, validation, population)
-        self.archive.save([item for item in report.selected])
+        self.archive.save([
+            Candidate(item.dna, item.train, item.score)
+            for item in report.selected
+        ])
         return report
 
     def robustness(self, train, validation, candidates, top_n: int = 20):
