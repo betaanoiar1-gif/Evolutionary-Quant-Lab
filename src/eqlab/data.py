@@ -4,6 +4,7 @@ import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 REQUIRED = ("timestamp", "open", "high", "low", "close", "volume")
@@ -58,11 +59,20 @@ class DataEngine:
             raise ValueError("Timestamps must be increasing")
         if df["timestamp"].duplicated().any():
             raise ValueError("Duplicate timestamps detected")
+
         numeric = list(REQUIRED[1:])
-        if not df[numeric].notna().all().all():
+        values = df[numeric]
+
+        # Check finiteness before OHLC relationship checks so NaN/Inf inputs
+        # receive deterministic, diagnostic errors instead of secondary OHLC
+        # validation failures.
+        if values.isna().any().any():
             raise ValueError("NaN values detected")
-        if not df[numeric].map(pd.api.types.is_number).all().all():
+        if not np.isfinite(values.to_numpy(dtype=float)).all():
+            raise ValueError("Infinite market values detected")
+        if not values.map(pd.api.types.is_number).all().all():
             raise ValueError("Non-numeric market values detected")
+
         if not (df["high"] >= df[["open", "close", "low"]].max(axis=1)).all():
             raise ValueError("Invalid high prices")
         if not (df["low"] <= df[["open", "close", "high"]].min(axis=1)).all():
@@ -71,8 +81,6 @@ class DataEngine:
             raise ValueError("Prices must be positive")
         if (df["volume"] < 0).any():
             raise ValueError("Negative volume detected")
-        if df[numeric].isin([float("inf"), float("-inf")]).any().any():
-            raise ValueError("Infinite market values detected")
 
     def validate_frequency(self, df: pd.DataFrame, expected: str, tolerance: int = 0) -> None:
         if len(df) < 3:
